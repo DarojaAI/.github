@@ -1,0 +1,82 @@
+name: Create Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pyproject.toml"
+      - "package.json"
+      - "terraform/versions.tf"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Detect version (Python)
+        id: python_version
+        run: |
+          if [ -f pyproject.toml ]; then
+            VERSION=$(grep 'version =' pyproject.toml | head -1 | cut -d'"' -f2)
+            echo "version=v$VERSION" >> $GITHUB_OUTPUT
+            echo "detected=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Detect version (Node)
+        id: node_version
+        if: steps.python_version.outputs.detected != 'true'
+        run: |
+          if [ -f package.json ]; then
+            VERSION=$(jq -r '.version' package.json)
+            echo "version=v$VERSION" >> $GITHUB_OUTPUT
+            echo "detected=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Detect version (Terraform)
+        id: tf_version
+        if: steps.python_version.outputs.detected != 'true' && steps.node_version.outputs.detected != 'true'
+        run: |
+          if grep -q 'version =' terraform/versions.tf 2>/dev/null; then
+            VERSION=$(grep 'version =' terraform/versions.tf | cut -d'"' -f2)
+            echo "version=v$VERSION" >> $GITHUB_OUTPUT
+            echo "detected=true" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Get detected version
+        id: final_version
+        run: |
+          if [ -n "${{ steps.python_version.outputs.version }}" ]; then
+            echo "version=${{ steps.python_version.outputs.version }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ steps.node_version.outputs.version }}" ]; then
+            echo "version=${{ steps.node_version.outputs.version }}" >> $GITHUB_OUTPUT
+          elif [ -n "${{ steps.tf_version.outputs.version }}" ]; then
+            echo "version=${{ steps.tf_version.outputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "ERROR: Could not detect version"
+            exit 1
+          fi
+      
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          if git rev-parse "refs/tags/${{ steps.final_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create GitHub Release
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.final_version.outputs.version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
