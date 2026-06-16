@@ -22,7 +22,7 @@
    - Standards: TypeScript strict mode, ESLint, Prettier, tests
 
 4. **Public/Examples**
-   - `linux-desktop-seed-public`, `gcp-postgres-terraform-example`, etc.
+   - `gcp-postgres-terraform-example`, etc.
    - Owner: Documentation/advocacy team
    - Standards: Clear README, active maintenance, responsive to issues
 
