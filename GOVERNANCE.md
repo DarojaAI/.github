@@ -26,6 +26,15 @@
    - Owner: Documentation/advocacy team
    - Standards: Clear README, active maintenance, responsive to issues
 
+5. **Shared Libraries & Templates** *(approved 2026-06-14, .github#2)*
+   - `infra-actions` — composite GitHub Actions used across the org
+   - `devnexus-common` (proposed rename: `py-daroja-libs`) — shared Python utilities (LLM client, tracing)
+   - `daroja-frontend-starter` — Vite 19 + Cloudflare template for new frontends
+   - `intelligent-feed` — per-project activators consumed by `research-orchestrator` and others
+   - `skill-bridge` — Claude Code skills → OpenClaw translator
+   - Owner: `@no_decaf_milan` (de-facto; designate per-lib maintainers as adoption matures)
+   - Standards: **semantic versioning enforced, release on tag, public changelog, documented consumer upgrade path, CI must be green on all supported consumer repos when the lib cuts a major.** Different release cadence and ownership model than products (a library has *consumers*, multiple; a breaking change is *every consumer's* pain).
+
 ## Decision-Making
 
 ### Standards Changes
